@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ice Cream Parlor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Ice Cream Parlor</h1>
+
+        <!-- Search Flavors Section -->
+        <h2>Search Flavors</h2>
+        <input type="text" id="search" placeholder="Search for flavors">
+        <select id="filter">
+            <option value="all">All</option>
+            <option value="vegan">Vegan</option>
+            <option value="gluten-free">Gluten-free</option>
+        </select>
+        <button onclick="searchFlavors()">Search</button>
+        <div id="flavorResults"></div>
+
+        <!-- Add Allergen Section -->
+        <h2>Add Allergen</h2>
+        <input type="text" id="allergenName" placeholder="Allergen Name">
+        <button onclick="addAllergen()">Add Allergen</button>
+
+        <!-- Your Cart Section -->
+        <h2>Your Cart</h2>
+        <div id="cartResults"></div>
+        <button onclick="fetchCart()">Refresh Cart</button>
+    </div>
+
+    <script>
+        const apiUrl = 'http://127.0.0.1:5000'; // Update this if your Flask app runs on a different URL
+
+        async function searchFlavors() {
+            const searchTerm = document.getElementById('search').value;
+            const filter = document.getElementById('filter').value;
+            const response = await fetch(`${apiUrl}/flavors?search=${searchTerm}`);
+            const flavors = await response.json();
+            displayFlavors(flavors);
+        }
+
+        function displayFlavors(flavors) {
+            const flavorResults = document.getElementById('flavorResults');
+            flavorResults.innerHTML = ''; // Clear previous results
+
+            flavors.forEach(flavor => {
+                const flavorDiv = document.createElement('div');
+                flavorDiv.innerHTML = `
+                    <h3>${flavor.name}</h3>
+                    <p>${flavor.description}</p>
+                    <button onclick="addToCart(${flavor.id})">Add to Cart</button>
+                `;
+                flavorResults.appendChild(flavorDiv);
+            });
+        }
+
+        async function addToCart(flavorId) {
+            await fetch(`${apiUrl}/cart/1`, { // Assuming user_id is 1
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ flavor_id: flavorId })
+            });
+            alert('Added to cart');
+            fetchCart();
+        }
+
+        async function fetchCart() {
+            const response = await fetch(`${apiUrl}/cart/1`); // Assuming user_id is 1
+            const cartItems = await response.json();
+            displayCart(cartItems);
+        }
+
+        function displayCart(cartItems) {
+            const cartResults = document.getElementById('cartResults');
+            cartResults.innerHTML = ''; // Clear previous results
+
+            if (cartItems.length === 0) {
+                cartResults.innerHTML = '<p>Your cart is empty.</p>';
+                return;
+            }
+
+            cartItems.forEach(item => {
+                const cartDiv = document.createElement('div');
+                cartDiv.innerHTML = `
+                    <h3>${item.flavor.name}</h3>
+                    <button onclick="removeFromCart(${item.flavor.id})">Remove from Cart</button>
+                `;
+                cartResults.appendChild(cartDiv);
+            });
+        }
+
+        async function removeFromCart(flavorId) {
+            await fetch(`${apiUrl}/cart/1?flavor_id=${flavorId}`, { // Assuming user_id is 1
+                method: 'DELETE'
+            });
+            alert('Removed from cart');
+            fetchCart();
+        }
+
+        async function addAllergen() {
+            const allergenName = document.getElementById('allergenName').value;
+            await fetch(`${apiUrl}/allergens`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: allergenName })
+            });
+            alert('Allergen added successfully');
+            document.getElementById('allergenName').value = ''; // Clear input
+        }
+    </script>
+
+    <style >
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #flavorResults, #cartResults {
+            margin-top: 20px;
+        }
+
+        #flavorResults div, #cartResults div {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</body>
+</html>
